@@ -5,6 +5,8 @@ import math
 from typing import Optional, Callable, List, Union, Tuple, Dict, Any
 from dataclasses import dataclass
 from ..layer_with_visualization import LayerWithVisualization
+import sys
+sys.path.append("/Users/ghazalkhalighinejad/Desktop/nsml-project/ndr")
 import framework
 
 

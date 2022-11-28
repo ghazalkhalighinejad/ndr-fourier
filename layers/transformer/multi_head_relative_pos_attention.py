@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from .multi_head_attention import AttentionMask, MultiHeadAttentionBase, AttentionMergeMixin
 import framework
 import math
-from matplotlib import cm
+# from matplotlib import cm
 
 def shift(posmat: torch.Tensor) -> torch.Tensor:
     # Slice out a matrix diagonally. Each successive row is sliced one position to the left compared.
@@ -69,22 +69,22 @@ class RelativeAttentionBase(MultiHeadAttentionBase):
         assert pos_encoding.shape[0] > l_slice
         return pos_encoding.narrow(0, pos_encoding.shape[0] // 2 - length + 1 - offset, 2 * length - 1)
 
-    def plot(self, options: Dict[str, Any]) -> Dict[str, Any]:
-        r = {}
-        marks = options.get("steplabel")
-        if options.get("mha.plot_head_details") and self.vis_pos_vs_content:
-            for head in range(self.vis_pos_vs_content[0][0].shape[0]):
-                cont = torch.stack([layer[0][head] for _, layer in enumerate(self.vis_pos_vs_content)], 0)
-                pos = torch.stack([layer[1][head] for _, layer in enumerate(self.vis_pos_vs_content)], 0)
-                i = torch.stack([layer[head] for _, layer in enumerate(self.attention_to_visualize)], 0)
-                content = torch.stack([cont, pos], -1).softmax(-1)[..., 0]
+    # def plot(self, options: Dict[str, Any]) -> Dict[str, Any]:
+    #     r = {}
+    #     marks = options.get("steplabel")
+    #     if options.get("mha.plot_head_details") and self.vis_pos_vs_content:
+    #         for head in range(self.vis_pos_vs_content[0][0].shape[0]):
+    #             cont = torch.stack([layer[0][head] for _, layer in enumerate(self.vis_pos_vs_content)], 0)
+    #             pos = torch.stack([layer[1][head] for _, layer in enumerate(self.vis_pos_vs_content)], 0)
+    #             i = torch.stack([layer[head] for _, layer in enumerate(self.attention_to_visualize)], 0)
+    #             content = torch.stack([cont, pos], -1).softmax(-1)[..., 0]
 
-                color = cm.get_cmap("brg")(content.cpu().numpy())
-                color[..., -1] = (i * 0.95 + 0.05).cpu().numpy()
+    #             color = cm.get_cmap("brg")(content.cpu().numpy())
+    #             color[..., -1] = (i * 0.95 + 0.05).cpu().numpy()
 
-                r[f"content_vs_pos_{head}"] = framework.visualize.plot.AnimatedHeatmap(color, ylabel="dest", 
-                    xlabel="src", textval=False, x_marks=marks, y_marks=marks, cmap="brg", colorbar=True,
-                    colorbar_ticks=[0, 0.99], colorbar_labels=["pos", "con"], ignore_wrong_marks=True)
+    #             r[f"content_vs_pos_{head}"] = framework.visualize.plot.AnimatedHeatmap(color, ylabel="dest", 
+    #                 xlabel="src", textval=False, x_marks=marks, y_marks=marks, cmap="brg", colorbar=True,
+    #                 colorbar_ticks=[0, 0.99], colorbar_labels=["pos", "con"], ignore_wrong_marks=True)
 
         # r["attention_max"] = framework.visualize.plot.AnimatedHeatmap(
         #     torch.stack([layer.max(0)[0] for _, layer in enumerate(self.attention_to_visualize)], 0),
