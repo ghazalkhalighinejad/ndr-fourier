@@ -1,13 +1,9 @@
-import math
 import torch
 import torch.nn
 import torch.nn.functional as F
 from .multi_head_attention import MultiHeadAttention, AttentionMask
 from typing import Optional, Callable, Dict
 from dataclasses import dataclass
-
-import framework
-# from .universal_transformer import UniversalTransformerEncoderWithLayer
 # This file is based on PyTorch's internal implementation
 
 ActivationFunction = Callable[[torch.Tensor], torch.Tensor]
@@ -167,7 +163,3 @@ class Transformer(torch.nn.Module):
     @staticmethod
     def generate_square_subsequent_mask(sz: int, device: torch.device) -> torch.Tensor:
         return torch.triu(torch.ones(sz, sz, dtype=torch.bool, device=device), diagonal=1)
-
-
-
-

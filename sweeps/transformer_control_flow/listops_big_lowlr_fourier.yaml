@@ -16,7 +16,7 @@ parameters:
   listops.variant:
     value: big
   transformer.variant:
-    value: ndr_residual
+    value: ndr-fourier
   test_batch_size:
     value: 16
   transformer.encoder_n_layers:
@@ -33,8 +33,8 @@ parameters:
     value: 0.1
   wd:
     value: 0.09
-  transformer.n_heads:
-    value: 16
+  # transformer.n_heads:
+  #   value: 16
   batch_size:
     value: 512
   optimizer:
