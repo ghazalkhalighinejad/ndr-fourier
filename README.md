@@ -1,10 +1,9 @@
-# Codebase for learning control flow in transformers
+# Codebase for NDR's experiments
 
-The official repository for our paper "The Neural Data Router: Adaptive Control Flow in Transformers Improves Systematic Generalization".
+We leveraged the codebase used in the paper "The Neural Data Router: Adaptive Control Flow in Transformers Improves Systematic Generalization". 
 
 Paper: https://arxiv.org/abs/2110.07732
 
-Please note that this repository is a cleaned-up version of the internal research repository we use. In case you encounter any problems with it, please don't hesitate to contact me.
 
 ## Setup
 
@@ -13,41 +12,6 @@ This project requires Python 3 (tested with Python 3.8 and 3.9) and PyTorch 1.8.
 ```bash
 pip3 install -r requirements.txt
 ```
-
-Create a Weights and Biases account and run 
-```bash
-wandb login
-```
-
-More information on setting up Weights and Biases can be found on
-https://docs.wandb.com/quickstart.
-
-For plotting, LaTeX is required (to avoid Type 3 fonts and to render symbols). Installation is OS specific.
-
-## Usage
-
-### Running the experiments from the paper on a cluster
-
-The code makes use of Weights and Biases for experiment tracking. In the ```sweeps``` directory, we provide sweep configurations for all experiments we have performed. The sweeps are officially meant for hyperparameter optimization, but we use them to run multiple configurations and seeds.
-
-To reproduce our results, start a sweep for each of the YAML files in the ```sweeps``` directory. Run wandb agent for each of them in the _root directory of the project_. This will run all the experiments, and they will be displayed on the W&B dashboard. The name of the sweeps must match the name of the files in ```sweeps``` directory, except the ```.yaml``` ending. More details on how to run W&B sweeps can be found at https://docs.wandb.com/sweeps/quickstart. If you want to use a Linux cluster to run the experiments, you might find https://github.com/robertcsordas/cluster_tool useful.
-
-For example, if you want to run NDR on compositional table lookup, run ```wandb sweep --name ctl_ndr sweeps/ctl_ndr.yaml```. This creates the sweep and prints out its ID. Then run ```wandb agent <ID>``` with that ID.
-
-#### Re-creating plots from the paper
-
-Edit config file ```paper/config.json```. Enter your project name in the field "wandb_project" (e.g. "username/project").
-
-Run the scripts in the ```paper``` directory. For example:
-
-```bash
-cd paper
-./run_all.sh
-```
-
-The output will be generated in the ```paper/out/``` directory. Tables will be printed to stdout in latex format.
-
-If you want to reproduce individual plots, it can be done by running individial python files in the ```paper``` directory.
 
 ### Running experiments locally
 
@@ -58,6 +22,8 @@ If you want to run experiments locally, you can use ```run.py```:
 ```bash
 ./run.py sweeps/ctl_ndr.yaml
 ```
+To run fourier+NDR on simple arithmetic, run ```python3 run.py sweeps/transformer_control_flow/simple_arithmetics_fourier.yaml```
+To run fourier+NDR on listops, run ```python3 run.py sweeps/transformer_control_flow/listops_big_lowlr_fourier_ndr.yaml```
 
 If the sweep in question has multiple parameter choices, ```run.py``` will interactively prompt choices of each of them.
 
@@ -65,10 +31,7 @@ The experiment also starts a Tensorboard instance automatically on port 7000. If
 
 Note that the plotting scripts work only with Weights and Biases.
 
-### Reducing memory usage
 
-In case some tasks won't fit on your GPU, play around with "-max_length_per_batch <number>" argument. It can trade off memory usage/speed by slicing batches and executing them in multiple passes. Reduce it until the model fits.
-  
 # BibText
 ```
 @article{csordas2021neural,
@@ -77,5 +40,22 @@ In case some tasks won't fit on your GPU, play around with "-max_length_per_batc
       journal={Preprint arXiv:2110.07732},
       year={2021},
       month={October}
+}
+
+@inproceedings{lee-thorp-etal-2022-fnet,
+    title = "{FN}et: Mixing Tokens with {F}ourier Transforms",
+    author = "Lee-Thorp, James  and
+      Ainslie, Joshua  and
+      Eckstein, Ilya  and
+      Ontanon, Santiago",
+    booktitle = "Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+    month = jul,
+    year = "2022",
+    address = "Seattle, United States",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2022.naacl-main.319",
+    doi = "10.18653/v1/2022.naacl-main.319",
+    pages = "4296--4313",
+    abstract = "We show that Transformer encoder architectures can be sped up, with limited accuracy costs, by replacing the self-attention sublayers with simple linear transformations that {``}mix{''} input tokens. Most surprisingly, we find that replacing the self-attention sublayer in a Transformer encoder with a standard, unparameterized Fourier Transform achieves 92-97{\%} of the accuracy of BERT counterparts on the GLUE benchmark, but trains 80{\%} faster on GPUs and 70{\%} faster on TPUs at standard 512 input lengths. At longer input lengths, our FNet model is significantly faster: when compared to the {``}efficient Transformers{''} on the Long Range Arena benchmark, FNet matches the accuracy of the most accurate models, while outpacing the fastest models across all sequence lengths on GPUs (and across relatively shorter lengths on TPUs). Finally, FNet has a light memory footprint and is particularly efficient at smaller model sizes; for a fixed speed and accuracy budget, small FNet models outperform Transformer counterparts.",
 }
 ```

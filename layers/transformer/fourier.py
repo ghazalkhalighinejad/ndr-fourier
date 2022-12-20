@@ -48,7 +48,6 @@ def fftn(x):
     out = x
     for axis in reversed(range(x.ndim)[1:]):  # We don't need to apply FFT to last axis
         out = torch.fft.fft(out, axis=axis)
-        print(out)
     return out
 
 class FNetBasicFourierTransform(torch.nn.Module):
@@ -93,7 +92,7 @@ class FNetFourierTransform(torch.nn.Module):
 
 class FourierLayer(torch.nn.Module):
     def __init__(self, d_model: int, dropout: float, scalar_gate: bool = False,
-                abs_gate:bool = True, attention_dropout=0, p_gate_drop=0, **kwargs):
+                abs_gate:bool = True, attention_dropout=0, p_gate_drop=0, has_gate = True, **kwargs):
         super().__init__()
 
         self.fourier = FNetFourierTransform(hidden_size = d_model, layer_norm_eps = 1e-12)
@@ -112,6 +111,8 @@ class FourierLayer(torch.nn.Module):
         self.g2.bias.data.fill_(-3)
 
         self.p_gate_drop = p_gate_drop
+        
+        self.has_gate = has_gate
 
         self.reset_parameters()
 
@@ -120,26 +121,27 @@ class FourierLayer(torch.nn.Module):
         # fourier instead of attention
         # input = self.att(src, src, mask)
         fourier_outputs = self.fourier(src)
-        fourier_output = fourier_outputs[0]
-
-        net = self.nmerge(src + fourier_output)
+        net = fourier_outputs[0]
 
         mid = self.drop(torch.relu(self.p1(net)))
         # proj = torch.relu(self.p2(mid))
         proj = self.p2(mid)
         # proj = self.n1(proj) #* self.scale
         proj = torch.tanh(proj)
+        
+        if self.has_gate:
+            gate = self.g2(self.drop(torch.relu(self.g1(net))))
+            bgate = torch.sigmoid(gate)
+            # bgate = torch.softmax(gate, -2)
 
-        gate = self.g2(self.drop(torch.relu(self.g1(net))))
-        bgate = torch.sigmoid(gate)
-        # bgate = torch.softmax(gate, -2)
+            if self.training and self.p_gate_drop>0:
+                bgate = bgate.masked_fill(torch.rand(*bgate.shape[:-1], 1, device=bgate.device, dtype=bgate.dtype) < self.p_gate_drop, 0)
 
-        if self.training and self.p_gate_drop>0:
-            bgate = bgate.masked_fill(torch.rand(*bgate.shape[:-1], 1, device=bgate.device, dtype=bgate.dtype) < self.p_gate_drop, 0)
+            src = src * (1-bgate) + proj * bgate
 
-        src = src * (1-bgate) + proj * bgate
-
-        return src
+            return src
+        else: 
+            return proj
 
 
     def reset_parameters(self):

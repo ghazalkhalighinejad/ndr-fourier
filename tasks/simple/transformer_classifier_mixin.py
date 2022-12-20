@@ -2,6 +2,7 @@ import torch.nn
 from layers.transformer import TransformerEncoderWithLayer, UniversalTransformerEncoderWithLayer,\
                                RelativeTransformerEncoderLayer
 from layers.transformer.ndr import NDRResidual, UniversalTransformerRandomLayerEncoderWithLayer
+from layers.transformer.fourier import FourierLayer
 from layers.transformer.ndr_geometric import NDRGeometric
 from layers.transformer.geometric_transformer import GeometricTransformerEncoderLayer
 from layers.transformer.act_transformer import ACTTransformerEncoderWithLayer, ACTTransformerEncoder
@@ -13,7 +14,8 @@ import functools
 from interfaces import Result
 from layers import LayerVisualizer
 from typing import Dict, List, Tuple, Any
-
+import numpy as np
+# from torchvision import models
 
 @args
 def a(parser: framework.helpers.ArgumentParser):
@@ -50,6 +52,16 @@ class TransformerClassifierMixin:
                     abs_gate = self.helper.args.ndr.abs_gate,
                     scalar_gate = self.helper.args.ndr.scalar_gate,
                     pos_embeddig=(lambda x, offset: x), embedding_init=default_init)),
+            "ndr-fourier": (UniversalTransformerEncoderWithLayer(FourierLayer), dict(
+                    p_gate_drop=self.helper.args.ndr.drop_gate,
+                    abs_gate = self.helper.args.ndr.abs_gate,
+                    scalar_gate = self.helper.args.ndr.scalar_gate,
+                    pos_embeddig=(lambda x, offset: x), embedding_init=default_init)),
+            "transformer-fourier": (UniversalTransformerEncoderWithLayer(FourierLayer), dict(
+                    p_gate_drop=self.helper.args.ndr.drop_gate,
+                    abs_gate = self.helper.args.ndr.abs_gate,
+                    scalar_gate = self.helper.args.ndr.scalar_gate,
+                    pos_embeddig=(lambda x, offset: x), embedding_init=default_init)),
             "geometric_transformer": (UniversalTransformerEncoderWithLayer(GeometricTransformerEncoderLayer),
                     dict(pos_embeddig=(lambda x, offset: x), embedding_init=default_init)),
             "ndr_geometric": (UniversalTransformerRandomLayerEncoderWithLayer(NDRGeometric), dict(
@@ -72,11 +84,10 @@ class TransformerClassifierMixin:
         }
 
         constructor, args = trafos[self.helper.args.transformer.variant]
-
-        model = TransformerClassifierModel(len(self.train_set.in_vocabulary),
+        if self.helper.args.transformer.variant == 'ndr-fourier':
+            model = TransformerClassifierModel(len(self.train_set.in_vocabulary),
                                       len(self.train_set.out_vocabulary), self.helper.args.state_size,
-                                      nhead=self.helper.args.transformer.n_heads,
-                                      n_layers=self.helper.args.transformer.encoder_n_layers,
+                                      n_layers=self.helper.args.transformer.encoder_n_layers ,
                                       ff_multiplier=self.helper.args.transformer.ff_multiplier,
                                       transformer=constructor,
                                       result_column=self.helper.args.transformer_classifier.result_column,
@@ -86,10 +97,35 @@ class TransformerClassifierMixin:
                                       dropout=self.helper.args.dropout,
                                       attention_dropout=self.helper.args.transformer.attention_dropout,
                                      out_mode=self.helper.args.trafo_classifier.out_mode, **args)
+        else:
+            model = TransformerClassifierModel(len(self.train_set.in_vocabulary),
+                                        len(self.train_set.out_vocabulary), self.helper.args.state_size,
+                                        nhead=self.helper.args.transformer.n_heads,
+                                        n_layers=self.helper.args.transformer.encoder_n_layers ,
+                                        ff_multiplier=self.helper.args.transformer.ff_multiplier,
+                                        transformer=constructor,
+                                        result_column=self.helper.args.transformer_classifier.result_column,
+                                        eos=self.helper.args.eos,
+                                        sos=self.helper.args.sos,
+                                        autoregressive=self.helper.args.transformer_classifier.autoregressive,
+                                        dropout=self.helper.args.dropout,
+                                        attention_dropout=self.helper.args.transformer.attention_dropout,
+                                        out_mode=self.helper.args.trafo_classifier.out_mode, **args)
 
         self.visualizer = LayerVisualizer(model, {"mha.plot_head_details": True})
         self.validation_started_on = None
         self.raw_data_to_save = None
+        # model_parameters = fdilter(lambda p: p.requires_grad, model.parameters())
+        # params = sum([np.pro(p.size())  for p in model_parameters])
+        # print(f'number of parameters: {params}')
+        # for name, parameter in model.named_parameters():
+        #     if not parameter.requires_grad: continue
+        #     params = parameter.numel()
+        #     print(f'name: {name}, parameters: {params}')
+        # print(model.named_paramters())
+        # model = models.vgg16()
+        # print(model)
+
         return model
 
     def create_model_interface(self):
